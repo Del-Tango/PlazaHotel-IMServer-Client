@@ -1,0 +1,8 @@
+#!/bin/bash
+
+cat<<EOF
+
+# [ Plaza Hotel ]: Quick INIT Wrapper (Client)
+
+
+EOF

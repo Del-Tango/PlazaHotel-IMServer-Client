@@ -1,0 +1,32 @@
+#!/bin/bash
+
+cat<<EOF
+
+# [ Ex ]: Client check-in string -
+ClientAlias,1,my-access-key,check-in,101,GuestAlias1,GuestAlias2
+
+# [ Ex ]: Guest join string -
+GuestAlias1,ClientAlias,join
+
+# [ Ex ]: Guest explore string -
+GuestAlias1,ClientAlias,join,my-access-key
+
+# [ Ex ]: Client check-out string -
+ClientAlias,check-out,101,1
+
+# [ Ex ]: Guest check-out string -
+GuestAlias,check-out,101,1
+
+# [ Ex ]: Server access-granted response -
+ClientAlias access-granted
+
+# [ Ex ]: Server access-denied response -
+ClientAlias access-denied
+
+# [ Ex ]: Client server-update instruction -
+ClientAlias,.update
+
+# [ Ex ]: Client sever-load instruction -
+CLientAlias,.load
+
+EOF

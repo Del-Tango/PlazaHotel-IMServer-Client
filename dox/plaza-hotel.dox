@@ -1,0 +1,182 @@
+#!/bin/bash
+
+cat<<EOF
+
+________________________________________________________________________________
+
+  *                  *  Plaza Hotel - IM Server/Client  *                    *
+_____________________________________________________________(v.Whispers)_______
+                    Regards, the Alveare Solutions society.
+
+[ TECH DOX ]: Whisper Rendezvous Point (Follow the White RABBIT)
+
+Hey `whoami`, thanks for meeting me at the Plaza. Looks like I have to show you
+around. Feel free to set aside a few minutes, here, let me check your watch -
+(`date`).
+
+
+[ Q/A ]: QA1 - What is the PlazaHotel project? - Summary
+
+It's an instant messaging (IM) application with a command line interface (CLI).
+Both the server and the client are built in. The server manages non persistent
+chatrooms (Hotel Rooms) and users (Orbitals). The client is used to connect to
+the server in one of three ways:
+
+    * Book Room     - Action (check-in)    - User role (client)
+    * Join Room     - Action (join)        - User role (guest)
+    * Network       - Action (join)        - User role (guest)
+
+The access levels (Hotel Floors) can be in one of two ways:
+
+    * Protected     - Requires level access key
+    * Unprotected   - Does not require level access key
+
+The chatroom servers (Hotel Rooms) can have one of two policies:
+
+    * OpenCortex    - No guest list, room open for networking
+    * ClosedCortex  - Guest list specified, room closed for networking
+
+No chat history is recorded or stored on disk, once the client orbital that
+booked the room logs out using the (.exit) command, all guest orbitals are
+disconnected from the socket and the room is destroyed.
+
+
+[ Q/A ]: QA2 - What is the Hotel? - DeepDive
+
+In a nutshell the Hotel is a pipe server that manages socket servers. The pipe
+server works in the following way:
+
+    1. It listens to a named pipe for instructions from clients (we will refer
+       to it as the state pipe);
+    2. Executes the instructions;
+    3. Updates a file with the current state of the hotel (we will refer to it
+       as the state file);
+    4. Returns the output to the client through another pipe (we will refer to
+       it as the response pipe) that the client is listening to.
+
+Client communication:
+
+    1. The client starts communicating with the pipe server through a (.update)
+       instruction. This triggers the Hotel to make a snapshot of its internal state
+       and write it to the state file.
+
+    2. The client the proceeds to load the server state file into a memory cache,
+    3. After the state file has been parsed and the client state cache was updated
+       the client proceeds with one of three instruction:
+
+        * Check In  - <client-alias>,<floor-level>,<access-key>,check-in,\\
+                      <room-number>,<guest-list>
+        * Join      - <guest-alias>,<client-alias>,join
+        * Check Out - <client-alias>,check-out,<room-number>,<floor-level>
+
+    4. The client receives the server response for his instruction and decides
+       whether to connect to socket server or not. Possible server responses are:
+
+       * <alias> access-granted      -  OK
+       * <alias> access-denied       - NOK
+       * <alias> checked-out         -  OK
+       * <alias> not-checked-out     - NOK
+       * <alias> invalid-instruction - NOK
+
+
+[ Q/A ]: QA3 - What are Hotel Rooms? - DeepDive
+
+Hotel rooms are socket server with a limit on the number of connections it can
+receive (Room Capacity). In order for a room to be used it must first be booked
+by a client orbital.
+
+When the client orbital bookes the room, he has the option to set in place a guest
+list of aliases that he is expecting. This in turn modfies the room entry policy,
+
+If no guest list is specified, the room policy is (open-cortex), and any client
+with a floor access key (withing the boundaries of the rooms capacity) can join
+the conversion and network with other hotel orbitals.
+
+If a guest list is specified, the room policy is (closed-cortex), meaning that
+only orbitals using aliases that are on the list are allowed to join the
+conversation.
+
+In order for a guest orbital to join a room that has his alias on the guest list
+he does not need to provide a level access key, only the alias of the client
+orbital that booked the room.
+
+In order for a client orbital to network with other people, he is required to
+have the floor level access key, and cannot join rooms unless they are already
+booked by another client, and that also have an (open-cortex) policy.
+
+
+[ Q/A ]: QA4 - What are Hotel Floors? - DeepDive
+
+Hotel floors are access level groups for socket servers (Hotel Rooms), and are
+all protected by their own access key that was randomly generated at server startup
+(with the exception of level 0 which is always unprotected/accessible to anyone).
+
+
+[ Q/A ]: QA5 - What are Level Access Keys? - DeepDive
+
+Access Keys are alphanumeric character sequences, randomly generated by the
+server at startup. The clients use these keys to access the rooms of certain
+floors.
+
+When networking with unknown orbitals, the floor access keys may increase the
+odds that you're interacting with people that have something in common with you.
+
+
+[ Q/A ]: QA6 - How do clients connect? - Procedure
+
+Clients connect via SSH to the dedicated PlazaHotel system user account. They
+login remotely using the command -
+
+    $ ssh -p <port-number> PlazaHotel@<server-address>
+
+and the Plaza Client starts up at login. All interrupt signals are trapped, and
+any user attempt to get to the regular shell triggers a logout.
+
+
+[ Q/A ]: QA7 - How do I setup the server? - Procedure
+
+    1. Setup Server Config
+        * 4) Control-Panel
+            * 2)  Set-Safety-OFF
+            * 28) Install-Dependencies
+            * 3)  Set-Silent-ON | 4) Set-Silent-OFF
+            * 5)  Set-Room-Capacity
+            * 6)  Set-Room-Buffer-Size
+            * 7)  Set-State-File
+            * 8)  Set-Key-File
+            * 9)  Set-State-Fifo
+            * 10) Set-Response-Fifo
+            * 11) Set-Port-Number
+            * 12) Set-Address
+            * 13) Set-Hotel-Width
+            * 14) Set-Hotel-Height
+            * 25) Set-System-User
+            * 26) Setup-System-User
+
+    2. Start Plaza Hotel Server
+        * 1) Plaza-Hotel
+            * 1) Start-Plaza-Hotel-Server
+
+
+[ Q/A ]: QA8 - How do I setup the client? - Procedure
+
+    1. Setup Plaza Hotel config file (conf/plaza-hotel.conf)
+        * Open File (conf/plaza-hotel.conf) -
+            * 27 ['client-banner-file']=
+            * 29 ['silent']=(on | off)
+            * 35 ['buffer-size']=
+            * 36 ['state-file']=
+            * 38 ['state-fifo']=
+            * 39 ['response-fifo']=
+            * 41 ['address']='127.0.0.1'
+
+    2. Setup System User
+        * 4) Control-Panel
+            * 2)  Set-Safety-OFF
+            * 26) Setup-System-User
+
+    3. Connect as client
+        * $ ssh -p <port-number> <system-user>@<server-address>
+
+
+EOF

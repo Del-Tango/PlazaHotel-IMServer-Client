@@ -1,0 +1,88 @@
+#!/bin/bash
+#
+# Regards, the Alveare Solutions society.
+#
+# PLAZA HOTEL
+
+declare -A PH_DEFAULT
+declare -A PH_LIB
+declare -A PH_SOURCE
+declare -A PH_IMPORTS
+declare -A PH_PAYLOAD
+declare -A PH_CARGO
+declare -A PH_SERVER_STATE
+
+PH_RUNNING_MODE="$1"
+
+# [ NOTE ]: Absolute directory path the current file is in.
+PH_DIRECTORY="$(
+    cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd
+)"
+CONF_FILE_PATH="$PH_DIRECTORY/conf/plaza-hotel.conf"
+
+if [ ! -f "$CONF_FILE_PATH" ]; then
+    echo "[ WARNING ]: Config file ($CONF_FILE_PATH) not found."
+    exit 1
+else
+    source "$CONF_FILE_PATH"
+fi
+
+for script in ${!PH_SOURCE[@]}; do
+    source ${PH_SOURCE[$script]}
+    EXIT_CODE=$?
+    if [[ "$PH_RUNNING_MODE" == 'client' ]]; then
+        continue
+    fi
+    if [ $EXIT_CODE -ne 0 ]; then
+        echo "[ NOK ]: Something went wrong."\
+            "Could not load ($script) script."
+    else
+        echo "[ OK ]: Successfully loaded ($script) script."
+    fi
+done
+
+for library in ${!PH_LIB[@]}; do
+    source ${PH_LIB[$library]}
+    EXIT_CODE=$?
+    if [[ "$PH_RUNNING_MODE" == 'client' ]]; then
+        continue
+    fi
+    if [ $EXIT_CODE -ne 0 ]; then
+        echo "[ NOK ]: Something went wrong."\
+            "Could not load ($library) library."
+    else
+        echo "[ OK ]: Successfully loaded ($library) library."
+    fi
+done
+
+# MISCELLANEOUS
+
+function init_plaza_hotel () {
+    case $PH_RUNNING_MODE in
+        'server')
+            display_im_server_loading_message &
+            plaza_hotel_project_setup &> /dev/null
+            action_start_plaza_hotel_server
+            exit $?
+            ;;
+        'client')
+            trap_plaza_hotel_client
+            display_im_client_loading_message &
+            plaza_hotel_project_setup &> /dev/null
+            display_client_banner_file
+            display_plaza_hotel_banner 'clear-screen-off'
+            update_server_state_cache
+            local CONTROLLER_LABEL='IMClient-R'
+            ;;
+        *)
+            plaza_hotel_project_setup
+            display_plaza_hotel_banner
+            local CONTROLLER_LABEL='MainController'
+            ;;
+    esac
+    init_menu "$CONTROLLER_LABEL"
+    return $?
+}
+
+init_plaza_hotel
+exit $?
