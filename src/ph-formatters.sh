@@ -99,6 +99,11 @@ function format_plaza_hotel_server_arguments () {
                     ${ARGUMENTS[@]} "--state-file=${opt_arg#*=}"
                 )
                 ;;
+            --static-floor-keys=*)
+                local ARGUMENT=(
+                    ${ARGUMENTS[@]} "--static-floor-keys=${opt_arg#*=}"
+                )
+                ;;
         esac
     done
     if [ ${#ARGUMENTS[@]} -eq 0 ]; then

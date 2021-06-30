@@ -10,10 +10,12 @@ import time
 import threading
 import optparse
 import pathlib
+import pysnooper
 
 from ph_client.ph_chat_client import PHChatClient
 from ph_server.ph_hotel import PHHotel
 from ph_server.ph_fifo_writter import PHFifoWritter
+from ph_server.ph_writter import PHFileWritter
 
 # HOT PARAMETERS
 
@@ -35,6 +37,7 @@ BUFFER_SIZE = 4096
 SILENT = 'off' # (on | off)
 STATE_FILE = '/tmp/phs.tmp'
 KEY_FILE = '/tmp/phk.tmp'
+STATIC_KEY_FILE='/tmp/phsk.tmp'
 STATE_FIFO = '/tmp/phs.fifo'
 RESPONSE_FIFO = '/tmp/phr.fifo'
 FILE_PERMISSIONS = 750
@@ -59,6 +62,7 @@ FLOOR_ACCESS_KEYS = {}
 HOTEL = None
 FIFO_READER = None
 FIFO_WRITTER = None
+FILE_WRITTER = None
 PREVIOUS_INSTRUCTION_SET = []
 PREVIOUS_INSTRUCTION_RESPONSE = []
 
@@ -79,6 +83,14 @@ def log_init(log_name=__name__):
 log = log_init(SCRIPT_NAME)
 
 # FETCHERS
+
+def fetch_file_writter_creation_values():
+    log.debug('')
+    creation_values = {
+        'file_path': RESPONSE_FIFO,
+        'log_name': SCRIPT_NAME,
+    }
+    return creation_values
 
 def fetch_plaza_hotel_client_creation_values():
     log.debug('')
@@ -154,6 +166,12 @@ def check_previous_instruction_set(instruction_set):
 
 # CREATORS
 
+def create_file_writter():
+    log.debug('')
+    creation_values = fetch_file_writter_creation_values()
+    file_writter = PHFileWritter(**creation_values)
+    return file_writter
+
 def create_command_line_parser():
     log.debug('')
     parser = optparse.OptionParser(
@@ -173,6 +191,7 @@ def create_command_line_parser():
         '   -C | --room-capacity=20 \ \n'
         '   -l | --log-file=/log/file/path \n\n'
         '   -P | --file-permissions=750 \n\n'
+        '   -S | --static-floor-keys=/static/key/file'
         'Usage: Book room as client -\n%prog \ \n'
         '   -n | --script-name=PlazaHotel \ \n'
         '   -m | --running-mode=client \ \n'
@@ -367,6 +386,22 @@ def display_plaza_hotel_banner():
     return stdout_msg(banner)
 
 # PROCESSORS
+
+def process_static_floor_keys_argument(parser, options):
+    global STATIC_KEY_FILE
+    log.debug('')
+    file_path = options.static_keys
+    if not file_path:
+        log.warning(
+            'No static floor access key file provided. '
+            'Defaulting to ({}).'.format(STATIC_KEY_FILE)
+        )
+        return False
+    STATIC_KEY_FILE = file_path
+    stdout_msg(
+        '[ + ]: Static floor keys setup ({}).'.format(STATIC_KEY_FILE)
+    )
+    return True
 
 def process_file_permissions_argument(parser, options):
     global FILE_PERMISSIONS
@@ -886,6 +921,7 @@ def process_command_line_options(parser):
         'operation': process_operation_argument(parser, options),
         'key_file': process_key_file_argument(parser, options),
         'file_permissions': process_file_permissions_argument(parser, options),
+        'static_floor_keys': process_static_floor_keys_argument(parser, options),
     }
     return processed
 
@@ -936,15 +972,30 @@ def process_server_invalid_operator_response(segmented_response,
 
 # INIT
 
-#@pysnooper.snoop('../logs/plaza-hotel.log')
+#@pysnooper.snoop()
 def init_plaza_hotel_server():
     global FLOOR_ACCESS_KEYS
     global HOTEL
     global FIFO_READER
     global FIFO_WRITTER
+    global STATIC_KEY_FILE
     log.debug('')
     HOTEL = create_plaza_hotel()
-    HOTEL.setup()
+    access_keys = {}
+    if STATIC_KEY_FILE and os.path.exists(STATIC_KEY_FILE):
+        FILE_WRITTER = create_file_writter()
+        content = FILE_WRITTER.read(target_file=STATIC_KEY_FILE)
+        access_keys = {}
+        if content:
+            for fl_line in content:
+                if fl_line[0] == "#":
+                    continue
+                split_line = fl_line.split(' ')
+                if len(split_line) != 2:
+                    continue
+                hotel_floor, floor_key = split_line[0], split_line[1]
+                access_keys.update({hotel_floor: floor_key.strip('\n')})
+    HOTEL.setup(**access_keys)
     update_floor_access_keys(HOTEL.fetch_floor_access_keys())
     FIFO_READER, FIFO_WRITTER = create_fifo_reader(), create_fifo_writter()
     FIFO_READER.setup()
@@ -1075,6 +1126,11 @@ def add_command_line_parser_server_options(parser):
         '-C', '--room-capacity', dest='capacity', type='int',
         help='Room Capacity - Number of orbitals allowed in each room. '
         'Implies (-m server)', metavar='ORBITAL_COUNT'
+    )
+    parser.add_option(
+        '-S', '--static-floor-keys', dest='static_keys', type='string',
+        help='Static Floor Access Keys. '
+        'Implies (-m server)', metavar='FILE_PATH'
     )
     return parser
 

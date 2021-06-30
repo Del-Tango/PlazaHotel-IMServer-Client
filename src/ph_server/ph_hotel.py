@@ -964,6 +964,32 @@ class PHHotel(object):
     # GENERAL
 
 #   @pysnooper.snoop()
+    def commit_floor_access_keys(self, floor_access_keys):
+        log.debug('')
+        hotel_floors = self.fetch_hotel_floors()
+        success_count, failure_count, updated_floors = 0, 0, {}
+        for floor_number in floor_access_keys:
+            int_floor_number = int(floor_number)
+            if int_floor_number not in hotel_floors:
+                continue
+            commit = hotel_floors[int_floor_number].set_access_key(
+                floor_access_keys[floor_number]
+            )
+            if not commit:
+                failure_count += 1
+            else:
+                updated_floors.update({
+                    int_floor_number: hotel_floors[int_floor_number]
+                })
+                success_count += 1
+        log.info(
+            'Successfully set ({}) floor access keys, ({}) failures.'.format(
+                success_count, failure_count
+            )
+        )
+        return updated_floors
+
+#   @pysnooper.snoop()
     def commit_level_access_keys_to_file(self, key_map):
         log.debug('')
         key_file = self.fetch_key_file()
@@ -972,10 +998,13 @@ class PHHotel(object):
         return file_writter.commit(target_file=key_file, content=formatted_key_map)
 
 #   @pysnooper.snoop()
-    def setup(self):
+    def setup(self, **kwargs):
         log.debug('')
         hotel_floors = self.spawn_hotel_floors(floor_count=self.fetch_floor_count())
-        floor_access_keys = self.generate_floor_access_keys()
+        if kwargs:
+            floor_access_keys = kwargs
+        else:
+            floor_access_keys = self.generate_floor_access_keys()
         set_floor_access_keys = self.set_floor_access_keys(floor_access_keys)
         commit_access_keys = self.commit_floor_access_keys(floor_access_keys)
         store_access_keys = self.commit_level_access_keys_to_file(floor_access_keys)
@@ -1106,29 +1135,6 @@ class PHHotel(object):
             )
             generated_rooms += spawn_rooms
         return generated_rooms
-
-#   @pysnooper.snoop()
-    def commit_floor_access_keys(self, floor_access_keys):
-        log.debug('')
-        hotel_floors = self.fetch_hotel_floors()
-        success_count, failure_count, updated_floors = 0, 0, {}
-        for floor_number in floor_access_keys:
-            commit = hotel_floors[floor_number].set_access_key(
-                floor_access_keys[floor_number]
-            )
-            if not commit:
-                failure_count += 1
-            else:
-                updated_floors.update({
-                    floor_number: hotel_floors[floor_number]
-                })
-                success_count += 1
-        log.info(
-            'Successfully set ({}) floor access keys, ({}) failures.'.format(
-                success_count, failure_count
-            )
-        )
-        return updated_floors
 
 #   @pysnooper.snoop()
     def spawn_hotel_floors(self, floor_count=1):

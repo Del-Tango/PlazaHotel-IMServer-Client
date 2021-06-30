@@ -59,7 +59,6 @@ function display_plaza_hotel_available_rooms () {
     return 0
 }
 
-
 function display_plaza_hotel_available_floors () {
     STATE_FLOOR_LINES=( $@ )
     if [ ${#STATE_FLOOR_LINES[@]} -eq 0 ]; then
@@ -84,13 +83,13 @@ function display_plaza_hotel_available_floors () {
 
 function display_im_server_loading_message () {
     local LOADING_STRING="[ LOADING ]: Plaza Hotel IM Server... "
-    display_loading_message 6 "$LOADING_STRING"
+    display_loading_message 4 "$LOADING_STRING"
     return $?
 }
 
 function display_im_client_loading_message () {
     local LOADING_STRING="[ LOADING ]: Plaza Hotel IM Client... "
-    display_loading_message 6 "$LOADING_STRING"
+    display_loading_message 4 "$LOADING_STRING"
     return $?
 }
 
