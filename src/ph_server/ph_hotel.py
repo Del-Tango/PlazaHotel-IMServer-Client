@@ -6,17 +6,12 @@
 
 import os
 import datetime
-import sys
 import stat
 import random
-import re
-import hashlib
-import json
 import string
 import logging
 import pysnooper
 
-from .ph_client import PHClient
 from .ph_floor import PHFloor
 from .ph_writter import PHFileWritter
 
@@ -322,7 +317,7 @@ class PHHotel(object):
     def fetch_state_writter(self):
         log.debug('')
         if not self.state_writter:
-            file_writer = self.create_state_file_writter(
+            file_writter = self.create_state_file_writter(
                 file_path=self.fetch_state_file()
             )
             self.set_state_writter(file_writter)
@@ -514,20 +509,20 @@ class PHHotel(object):
         log.debug('')
         filtered_lines, start_line, end_line = [], 0, 0
         start_reached, end_reached = False, False,
-        for line_index in range(len(state_file_lines) - 1):
+        for line_index in range(len(state_file_content) - 1):
             if not start_reached:
-                if not state_file_lines[line_index] == start_marker:
+                if not state_file_content[line_index] == start_reached:
                     continue
                 start_reached, start_line = True, line_index
                 continue
             if end_reached:
                 break
-            elif state_file_lines[line_index] == end_marker:
+            elif state_file_content[line_index] == end_reached:
                 end_reached, end_line = True, line_index - 1
                 continue
-            elif not state_file_lines[line_index] or state_file_lines[line_index][0] == '#':
+            elif not state_file_content[line_index] or state_file_content[line_index][0] == '#':
                 continue
-            filtered_lines.append(state_file_lines[line_index])
+            filtered_lines.append(state_file_content[line_index])
         return {
             'filtered': filtered_lines,
             'start_line': start_line + 1,
@@ -576,9 +571,9 @@ class PHHotel(object):
         log.debug('')
         if not isinstance(key_map, dict):
             return self.error_invalid_level_access_key_map(key_map)
-        content = ''
+        content = []
         for floor_number, access_key in key_map.items():
-            content += '{} {}\n'.format(floor_number, access_key)
+            content.append('{} {}'.format(floor_number, access_key))
         if not content:
             self.warning_no_key_file_content_formatted(key_map, content)
         return content
@@ -642,7 +637,7 @@ class PHHotel(object):
                     'timestamp': timestamp,
                     'port_number': port_number,
                     'capacity': capacity,
-                    'floor_level': floor_level,
+                    'floor_level': floor_number,
                     'population': orbitals,
                     'cortex': cortex,
                 }
@@ -669,9 +664,9 @@ class PHHotel(object):
                 self.warning_malformed_state_file_client_line(line, e)
             client_states.update({
                 client_alias: {
-                    'timestamp': details.get('timestamp', ' '),
-                    'booked_room': details.get('booked_room', ' '),
-                    'booked_floor': details.get('booked_floor', ' '),
+                    'timestamp': timestamp,
+                    'booked_room': room_number,
+                    'booked_floor': floor_number,
                     'guest_list': guest_list,
                     'guest_count': active_guests,
                     'guests': guests,
@@ -827,11 +822,13 @@ class PHHotel(object):
     def ensure_text_file_exists(self, file_path):
         log.debug('')
         try:
-            f = open(file_path, 'w')
-            os.chmod(file_path, self.file_permissions)
+            if not os.path.exists(file_path):
+                f = open(file_path, 'w')
+                f.close()
+                os.chmod(file_path, self.file_permissions)
+
         except Exception as e:
             return self.error_could_not_ensure_text_file_exists(file_path, e)
-        f.close()
         return True
 
     def ensure_fifo_exists(self, fifo_path):
@@ -966,6 +963,29 @@ class PHHotel(object):
 
     # GENERAL
 
+#   @pysnooper.snoop()
+    def commit_level_access_keys_to_file(self, key_map):
+        log.debug('')
+        key_file = self.fetch_key_file()
+        formatted_key_map = self.format_key_file_content_from_key_map(key_map)
+        file_writter = self.fetch_state_writter()
+        return file_writter.commit(target_file=key_file, content=formatted_key_map)
+
+#   @pysnooper.snoop()
+    def setup(self):
+        log.debug('')
+        hotel_floors = self.spawn_hotel_floors(floor_count=self.fetch_floor_count())
+        floor_access_keys = self.generate_floor_access_keys()
+        set_floor_access_keys = self.set_floor_access_keys(floor_access_keys)
+        commit_access_keys = self.commit_floor_access_keys(floor_access_keys)
+        store_access_keys = self.commit_level_access_keys_to_file(floor_access_keys)
+        spawn_rooms = self.spawn_hotel_rooms(hotel_floors)
+        state_map = self.build_state_map()
+        set_state_map = self.set_state_map(state_map)
+        ensure_files_exist = self.ensure_files_exist()
+        commit_state = self.commit_server_state_to_file()
+        return self.fetch_state_file()
+
 #   @pysnooper.snoop('../logs/plaza-hotel.log')
     def checkout_room(self, client=None, floor_number=None,
                       room_number=None, **kwargs):
@@ -1086,29 +1106,6 @@ class PHHotel(object):
             )
             generated_rooms += spawn_rooms
         return generated_rooms
-
-#   @pysnooper.snoop()
-    def setup(self):
-        log.debug('')
-        hotel_floors = self.spawn_hotel_floors(floor_count=self.fetch_floor_count())
-        floor_access_keys = self.generate_floor_access_keys()
-        set_floor_access_keys = self.set_floor_access_keys(floor_access_keys)
-        commit_access_keys = self.commit_floor_access_keys(floor_access_keys)
-        store_access_keys = self.commit_level_access_keys_to_file
-        spawn_rooms = self.spawn_hotel_rooms(hotel_floors)
-        state_map = self.build_state_map()
-        set_state_map = self.set_state_map(state_map)
-        ensure_files_exist = self.ensure_files_exist()
-        commit_state = self.commit_server_state_to_file()
-        return self.fetch_state_file()
-
-    def commit_level_access_keys_to_file(self):
-        log.debug('')
-        access_keys = self.fetch_floor_access_keys()
-        key_file = self.fetch_key_file()
-        formatted_key_map = self.format_key_file_content_from_key_map(key_map)
-        file_writter = self.fetch_state_writter()
-        return file_writter.commit(target_file=key_file, content=formatted_key_map)
 
 #   @pysnooper.snoop()
     def commit_floor_access_keys(self, floor_access_keys):
@@ -1284,8 +1281,6 @@ class PHHotel(object):
     def __str__(self, *args, **kwargs):
         log.debug('')
         return self.format_hotel_detail_string()
-
-    # INIT
 
     # WARNINGS
 

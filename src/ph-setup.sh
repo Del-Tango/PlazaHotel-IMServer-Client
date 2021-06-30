@@ -99,6 +99,7 @@ function setup_im_client_restricted_menu_controller() {
     setup_im_client_restricted_menu_option_book_room
     setup_im_client_restricted_menu_option_join_room
     setup_im_client_restricted_menu_option_explore_room
+    setup_im_client_restricted_menu_option_back
     done_msg "(${CYAN}$IM_CLIENT_RESTRICTED_CONTROLLER_LABEL${RESET}) controller"\
         "option binding complete."
     return 0
@@ -122,6 +123,12 @@ function setup_im_client_restricted_menu_option_explore_room () {
     setup_menu_controller_action_option \
         "$IM_CLIENT_RESTRICTED_CONTROLLER_LABEL" "I-Want-To-Network" \
         'action_plaza_hotel_interactive_client_explore_room'
+    return $?
+}
+
+function setup_im_client_restricted_menu_option_back () {
+    setup_menu_controller_action_option \
+        "$IM_CLIENT_RESTRICTED_CONTROLLER_LABEL" "Back" 'action_back'
     return $?
 }
 
@@ -308,7 +315,6 @@ function setup_settings_menu_controller () {
     setup_settings_menu_option_set_room_port_number
     setup_settings_menu_option_set_server_address
     setup_settings_menu_option_set_client_alias
-#   setup_settings_menu_option_set_client_type
     setup_settings_menu_option_set_client_action
     setup_settings_menu_option_set_client_guest_list
     setup_settings_menu_option_set_guest_of
@@ -534,12 +540,5 @@ function setup_settings_menu_option_set_client_system_user_details () {
 }
 
 # CODE DUMP
-
-#   function setup_settings_menu_option_set_client_type () {
-#       setup_menu_controller_action_option \
-#           "$SETTINGS_CONTROLLER_LABEL" 'Set-Client-Type' \
-#           'action_set_client_category_type'
-#       return $?
-#   }
 
 

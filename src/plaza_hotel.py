@@ -5,10 +5,7 @@
 # PLAZA HOTEL (v.Whispers)
 
 import os
-import datetime
-import sys
 import logging
-import pysnooper
 import time
 import threading
 import optparse
@@ -269,16 +266,16 @@ def handle_plaza_hotel_client_checkout(fifo_writter, fifo_reader):
     OPERATOR = 'check-out'
     checkout_string = ALIAS + ',' + OPERATOR + ',' + str(ROOM_NUMBER) + ',' \
         + str(FLOOR_NUMBER)
-    checkout = fifo_reader.write(content=checkout_string)
+    fifo_reader.write(content=checkout_string)
     response_count, response_body = 0, ''
     for response in fifo_writter.read():
         if response_count > 5:
-            return error_server_response_timeout(join_string, response_count)
+            return error_server_response_timeout(response_body, response_count)
         instruction_response = ' '.join(
             [item.strip('\n').strip(' ') for item in response.split(' ')]
         )
         if check_previous_instruction_response(instruction_response):
-            self.warning_duplicated_instruction_response(instruction_response)
+            warning_duplicated_instruction_response(instruction_response)
             continue
         dst_alias = response.split(' ')[0].strip('\n').strip(' ')
         if not response or dst_alias != ALIAS:
@@ -309,7 +306,7 @@ def handle_plaza_hotel_guest_join(fifo_writter, fifo_reader):
             [item.strip('\n').strip(' ') for item in response.split(' ')]
         )
         if check_previous_instruction_response(instruction_response):
-            self.warning_duplicated_instruction_response(instruction_response)
+            warning_duplicated_instruction_response(instruction_response)
             continue
         dst_alias = response.split(' ')[0].strip('\n').strip(' ')
         if not response or dst_alias != ALIAS:
@@ -939,22 +936,6 @@ def process_server_invalid_operator_response(segmented_response,
 
 # INIT
 
-#@pysnooper.snoop()
-def init_plaza_hotel_client():
-    global FIFO_READER
-    global FIFO_WRITTER
-    log.debug('')
-    FIFO_READER, FIFO_WRITTER = create_fifo_reader(), create_fifo_writter()
-    FIFO_READER.setup()
-    FIFO_WRITTER.setup()
-    handlers = {
-        'client': handle_plaza_hotel_client_checkin,
-        'guest': handle_plaza_hotel_guest_join,
-    }
-    if CLIENT_TYPE not in handlers:
-        return error_invalid_client_type(CLIENT_TYPE, list(handlers.keys()))
-    return handlers[CLIENT_TYPE](FIFO_WRITTER, FIFO_READER)
-
 #@pysnooper.snoop('../logs/plaza-hotel.log')
 def init_plaza_hotel_server():
     global FLOOR_ACCESS_KEYS
@@ -987,10 +968,7 @@ def init_plaza_hotel_server():
         FIFO_WRITTER.cleanup()
 
 def init_plaza_hotel():
-#   global log
-    parse_cli = parse_command_line_arguments()
-#   log = log_init(SCRIPT_NAME)
-#   log.debug('')
+    parse_command_line_arguments()
     plaza_hotel = {
         'client': init_plaza_hotel_client,
         'server': init_plaza_hotel_server,
@@ -1000,6 +978,22 @@ def init_plaza_hotel():
             RUNNING_MODE, list(plaza_hotel.keys())
         )
     return plaza_hotel[RUNNING_MODE]()
+
+#@pysnooper.snoop()
+def init_plaza_hotel_client():
+    global FIFO_READER
+    global FIFO_WRITTER
+    log.debug('')
+    FIFO_READER, FIFO_WRITTER = create_fifo_reader(), create_fifo_writter()
+    FIFO_READER.setup()
+    FIFO_WRITTER.setup()
+    handlers = {
+        'client': handle_plaza_hotel_client_checkin,
+        'guest': handle_plaza_hotel_guest_join,
+    }
+    if CLIENT_TYPE not in handlers:
+        return error_invalid_client_type(CLIENT_TYPE, list(handlers.keys()))
+    return handlers[CLIENT_TYPE](FIFO_WRITTER, FIFO_READER)
 
 # PARSERS
 

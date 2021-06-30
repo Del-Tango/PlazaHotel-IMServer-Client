@@ -86,11 +86,29 @@ function format_plaza_hotel_client_checkin_arguments () {
 }
 
 function format_plaza_hotel_server_arguments () {
+    ARGUMENTS=()
+    for opt_arg in $@; do
+        case "$opt_arg" in
+            --key-file=*)
+                local ARGUMENT=(
+                    ${ARGUMENTS[@]} "--key-file=${opt_arg#*=}"
+                )
+                ;;
+            --state-file=*)
+                local ARGUMENT=(
+                    ${ARGUMENTS[@]} "--state-file=${opt_arg#*=}"
+                )
+                ;;
+        esac
+    done
+    if [ ${#ARGUMENTS[@]} -eq 0 ]; then
+        local ARGUMENT=( "--state-file=${MD_DEFAULT['state-file']}" )
+    fi
     local ARGUMENTS=(
+        ${ARGUMENTS[@]}
         "--script-name=${SCRIPT_NAME}"
         "--running-mode=server"
         "--silent-flag=${MD_DEFAULT['silent']}"
-        "--state-file=${MD_DEFAULT['state-file']}"
         "--state-fifo=${MD_DEFAULT['state-fifo']}"
         "--response-fifo=${MD_DEFAULT['response-fifo']}"
         "--buffer-size=${MD_DEFAULT['buffer-size']}"

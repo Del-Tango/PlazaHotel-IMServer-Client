@@ -62,7 +62,7 @@ function init_plaza_hotel () {
         'server')
             display_im_server_loading_message &
             plaza_hotel_project_setup &> /dev/null
-            action_start_plaza_hotel_server
+            action_start_plaza_hotel_server $@
             exit $?
             ;;
         'client')

@@ -258,7 +258,7 @@ function action_plaza_hotel_client_book_room () {
 }
 
 function action_start_plaza_hotel_server () {
-    ARGUMENTS=( `format_plaza_hotel_server_arguments` )
+    ARGUMENTS=( `format_plaza_hotel_server_arguments $@` )
     debug_msg "Start server (${BLUE}$SCRIPT_NAME${RESET}) arguments"\
         "(${MAGENTA}${ARGUMENTS[@]}${RESET})"
     ${PH_CARGO['plaza-hotel']} ${ARGUMENTS[@]}

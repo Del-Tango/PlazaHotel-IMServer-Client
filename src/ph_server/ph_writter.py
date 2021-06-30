@@ -36,8 +36,8 @@ class PHFileWritter():
 
     def set_file_path(self, file_path):
         log.debug('')
-        if not self.check_file_exists(target_file):
-            return self.error_file_not_found(target_file)
+        if not self.check_file_exists(file_path):
+            return self.error_file_not_found(file_path)
         self.file_path = file_path
         return self.file_path
 
@@ -88,7 +88,7 @@ class PHFileWritter():
         log.debug('')
         target_file = target_file or self.fetch_file_path()
         if not target_file:
-            return self.warning_could_not_fetch_target_file(target_file, content)
+            return self.warning_could_not_fetch_target_file(target_file)
         elif not self.check_file_exists(target_file):
             return self.error_file_not_found(target_file)
         content = []
@@ -105,7 +105,7 @@ class PHFileWritter():
         log.debug('')
         target_file = target_file or self.fetch_file_path()
         if not target_file:
-            return self.warning_could_not_fetch_target_file(target_file, content)
+            return self.warning_could_not_fetch_target_file(target_file)
         elif not self.check_file_exists(target_file):
             return self.error_file_not_found(target_file)
         content = []
@@ -123,7 +123,7 @@ class PHFileWritter():
         log.debug('')
         target_file = target_file or self.fetch_file_path()
         if not target_file:
-            return self.warning_could_not_fetch_target_file(target_file, content)
+            return self.warning_could_not_fetch_target_file(target_file)
         elif not self.check_file_exists(target_file):
             return self.error_file_not_found(target_file)
         content = self.read(target_file)
@@ -153,7 +153,6 @@ class PHFileWritter():
     def error_file_not_found(self, *args):
         log.error('File not found. Details: {}'.format(args))
         return False
-
 
 
 if __name__ == '__main__':
