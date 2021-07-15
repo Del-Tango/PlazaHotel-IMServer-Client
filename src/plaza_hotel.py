@@ -37,7 +37,7 @@ BUFFER_SIZE = 4096
 SILENT = 'off' # (on | off)
 STATE_FILE = '/tmp/phs.tmp'
 KEY_FILE = '/tmp/phk.tmp'
-STATIC_KEY_FILE='/tmp/phsk.tmp'
+STATIC_KEY_FILE='/tmp/phk.tmp'
 STATE_FIFO = '/tmp/phs.fifo'
 RESPONSE_FIFO = '/tmp/phr.fifo'
 FILE_PERMISSIONS = 750
@@ -433,7 +433,7 @@ def process_log_file_argument(parser, options):
     LOG_FILE_PATH = file_path
     log = log_init(SCRIPT_NAME)
     stdout_msg(
-        '[ + ]: Log file setup ({}).'.format(LOG_FILE_PATH)
+        '[ + ]: Log file setup ({}).'.format(os.path.basename(LOG_FILE_PATH))
     )
     return True
 

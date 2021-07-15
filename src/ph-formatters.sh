@@ -87,21 +87,21 @@ function format_plaza_hotel_client_checkin_arguments () {
 
 function format_plaza_hotel_server_arguments () {
     ARGUMENTS=()
-    for opt_arg in $@; do
-        case "$opt_arg" in
+    for opt in $@; do
+        case "$opt" in
             --key-file=*)
                 local ARGUMENT=(
-                    ${ARGUMENTS[@]} "--key-file=${opt_arg#*=}"
+                    ${ARGUMENTS[@]} "--key-file=${opt#*=}"
                 )
                 ;;
             --state-file=*)
                 local ARGUMENT=(
-                    ${ARGUMENTS[@]} "--state-file=${opt_arg#*=}"
+                    ${ARGUMENTS[@]} "--state-file=${opt#*=}"
                 )
                 ;;
             --static-floor-keys=*)
                 local ARGUMENT=(
-                    ${ARGUMENTS[@]} "--static-floor-keys=${opt_arg#*=}"
+                    ${ARGUMENTS[@]} "--static-floor-keys=${opt#*=}"
                 )
                 ;;
         esac

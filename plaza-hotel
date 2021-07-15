@@ -84,5 +84,5 @@ function init_plaza_hotel () {
     return $?
 }
 
-init_plaza_hotel
+init_plaza_hotel $@
 exit $?
